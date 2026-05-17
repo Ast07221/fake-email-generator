@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Email Generator</title>
+
+<style>
+body{
+    margin:0;
+    font-family:system-ui;
+    background:#0b0b0b;
+    color:#fff;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    overflow-x:hidden;
+}
+.wrapper{
+    width:100%;
+    max-width:760px;
+    display:flex;
+    flex-direction:column;
+    justify-content:center;
+    align-items:center;
+    min-height:100vh;
+    padding:20px 20px 120px 20px;
+    box-sizing:border-box;
+    position:relative;
+    margin:auto;
+}
+.output{
+    width:100%;
+    max-width:580px;
+    text-align:left;
+    max-height:calc(100vh - 180px);
+    overflow-y:auto;
+    padding-bottom:10px;
+    box-sizing:border-box;
+}
+.card{
+    width:100%;
+    padding:10px 0;
+    border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.line{
+    margin:6px 0;
+    line-height:1.5;
+    font-size:18px;
+    word-break:break-all;
+}
+.label{
+    color:#6f6f6f;
+}
+.value{
+    color:#fff;
+}
+.email{
+    font-family:monospace;
+    font-size:20px;
+    letter-spacing:0.5px;
+}
+.loader{
+    position:absolute;
+    top:18%;
+    left:50%;
+    transform:translateX(-50%);
+    font-family:monospace;
+    font-size:11px;
+    letter-spacing:4px;
+    color:#7a7a7a;
+    opacity:.72;
+    pointer-events:none;
+    text-transform:uppercase;
+}
+.topbar{
+    position:fixed;
+    bottom:25px;
+    left:50%;
+    transform:translateX(-50%);
+    display:flex;
+    gap:16px;
+    align-items:center;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+button{
+    background:#0b0b0b;
+    border:none;
+    color:#fff;
+    cursor:pointer;
+    font-size:14px;
+}
+input[type="number"]{
+    width:60px;
+    background:none;
+    border:none;
+    color:#fff;
+    text-align:center;
+    font-size:14px;
+    outline:none;
+}
+.copySingle{
+    font-size:11px;
+    color:#777;
+    cursor:pointer;
+    user-select:none;
+}
+.copySingle:hover{
+    color:#fff;
+}
+.notice{
+    position:fixed;
+    top:18px;
+    left:50%;
+    transform:translateX(-50%);
+    font-size:12px;
+    color:#888;
+    opacity:0;
+    transition:.25s;
+}
+
+@keyframes blink{
+    0%{opacity:0;}
+    50%{opacity:1;}
+    100%{opacity:0;}
+}
+</style>
+</head>
+
+<body>
+
+<div class="notice" id="notice">copied</div>
+
+<div class="wrapper">
+
+    <div class="loader" id="loader">
+        GENERATING <span style="animation:blink .9s infinite;">...</span>
+    </div>
+
+    <div class="output" id="output"></div>
+</div>
+
+<div class="topbar">
+    <button onclick="generateEmails()">generate</button>
+    <button onclick="copyAll()">copy</button>
+    <button onclick="clearAll()">clear</button>
+
+    <input id="count" type="number" value="5" min="1" max="20">
+</div>
+
+<script>
+
+const output = document.getElementById("output");
+const loader = document.getElementById("loader");
+const notice = document.getElementById("notice");
+
+let current = [];
+
+const firstNames = [
+"alex","michael","john","daniel","james","matt","chris","tom","andrew","sam",
+"anna","emma","olivia","mia","sophia","lucy","kate","nina","julia","laura"
+];
+
+const lastNames = [
+"smith","johnson","brown","williams","jones","miller","davis","wilson",
+"taylor","anderson","thomas","moore","jackson","martin","lee","perez"
+];
+
+const domains = [
+"gmail.com","outlook.com","hotmail.com","yahoo.com","protonmail.com"
+];
+
+function show(text){
+    notice.textContent = text;
+    notice.style.opacity = 1;
+    setTimeout(()=>notice.style.opacity=0,1200);
+}
+
+function random(arr){
+    return arr[Math.floor(Math.random()*arr.length)];
+}
+
+function generateEmail(){
+    const f = random(firstNames);
+    const l = random(lastNames);
+    const num = Math.floor(Math.random()*99);
+
+    const domain = random(domains);
+
+    return `${f}${l}${num}@${domain}`;
+}
+
+function copy(text){
+    navigator.clipboard.writeText(text);
+    show("copied");
+}
+
+function render(list){
+    output.innerHTML = "";
+
+    list.forEach((email,index)=>{
+      const card = document.createElement("div");
+        card.className = "card";
+
+        card.innerHTML = `
+        <div class="line" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+            <div style="flex:1;cursor:pointer;" onclick="copy('${email}')">
+                <span class="label">Email:</span>
+                <span class="value email" id="e${index}"></span>
+            </div>
+            <div class="copySingle" onclick="copy('${email}')">copy</div>
+        </div>
+        `;
+
+        output.appendChild(card);
+
+        const target = document.getElementById(`e${index}`);
+
+        let i = 0;
+
+        function typeChar(){
+            if(i < email.length){
+                target.textContent += email[i];
+                i++;
+                setTimeout(typeChar, 6);
+            }
+        }
+
+        setTimeout(()=>{
+            typeChar();
+        }, index * 120);
+    });
+}
+
+function generateEmails(){
+    loader.style.display = "block";
+    output.innerHTML = "";
+
+    setTimeout(()=>{
+        const count = Math.min(20, Math.max(1, parseInt(document.getElementById("count").value) || 5));
+
+        const list = [];
+        for(let i=0;i<count;i++){
+            list.push(generateEmail());
+        }
+
+        current = list;
+        loader.style.display = "none";
+        render(list);
+
+    },300);
+}
+
+function copyAll(){
+    if(!current.length) return;
+    navigator.clipboard.writeText(current.join("\n"));
+    show("copied");
+}
+
+function clearAll(){
+    output.innerHTML = "";
+    current = [];
+    loader.style.display = "block";
+}
+
+window.onload = generateEmails;
+
+</script>
+
+</body>
+</html>
